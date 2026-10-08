@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join the board — Cyber Shield</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <a class="brand" href="login.html">Cyber<span>Shield</span></a>
+  <nav><a href="login.html">Already registered</a></nav>
+</div>
+
+<div class="page">
+  <div class="notice">
+    <div class="eyebrow">New account</div>
+    <h1>Tell us a little about you</h1>
+    <p>Your age, occupation, and state help us warn you about the scams people like you are actually facing.</p>
+
+    <form id="registerForm">
+      <label for="name">Full name</label>
+      <input type="text" id="name" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" required minlength="6">
+
+      <label for="age">Age</label>
+      <input type="number" id="age" min="13" max="100" required>
+
+      <label for="occupation">Occupation</label>
+      <select id="occupation" required>
+        <option value="">Select one</option>
+        <option>student</option>
+        <option>employee</option>
+        <option>business owner</option>
+        <option>retired</option>
+        <option>homemaker</option>
+        <option>freelancer</option>
+        <option>government employee</option>
+        <option>daily wage worker</option>
+        <option>farmer</option>
+        <option>healthcare worker</option>
+        <option>teacher</option>
+        <option>delivery agent</option>
+        <option>shop owner</option>
+        <option>unemployed</option>
+        <option>self-employed professional</option>
+      </select>
+
+      <label for="state">State</label>
+      <input type="text" id="state" placeholder="e.g. Tamil Nadu" required>
+
+      <button type="submit">Create account</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </form>
+
+    <a class="helper-link" href="login.html">Already have an account? Log in</a>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('registerForm');
+const statusMsg = document.getElementById('statusMsg');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusMsg.className = 'status-msg';
+
+  const payload = {
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value,
+    age: Number(document.getElementById('age').value),
+    occupation: document.getElementById('occupation').value,
+    state: document.getElementById('state').value
+  };
+
+  try {
+    const res = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+
+    statusMsg.textContent = 'Account created. Redirecting to login...';
+    statusMsg.className = 'status-msg show ok';
+    setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+  } catch (err) {
+    statusMsg.textContent = err.message;
+    statusMsg.className = 'status-msg show err';
+  }
+});
+</script>
+
+</body>
+</html>

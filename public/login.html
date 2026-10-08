@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — Cyber Shield</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <a class="brand" href="login.html">Cyber<span>Shield</span></a>
+  <nav><a href="register.html">Create an account</a></nav>
+</div>
+
+<div class="page">
+  <div class="notice">
+    <div class="eyebrow">Welcome back</div>
+    <h1>Log in</h1>
+    <p>See what's been reported near you, and check your personal risk warning.</p>
+
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input type="email" id="email" required>
+
+      <label for="password">Password</label>
+      <input type="password" id="password" required>
+
+      <button type="submit">Log in</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </form>
+
+    <a class="helper-link" href="register.html">New here? Create an account</a>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('loginForm');
+const statusMsg = document.getElementById('statusMsg');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusMsg.className = 'status-msg';
+
+  const payload = {
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value
+  };
+
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    // Save the token and user info so other pages can use them
+    localStorage.setItem('cs_token', data.token);
+    localStorage.setItem('cs_user', JSON.stringify(data.user));
+    localStorage.setItem('cs_userId', data.userId);
+
+    statusMsg.textContent = 'Welcome back! Redirecting...';
+    statusMsg.className = 'status-msg show ok';
+    setTimeout(() => { window.location.href = 'board.html'; }, 900);
+  } catch (err) {
+    statusMsg.textContent = err.message;
+    statusMsg.className = 'status-msg show err';
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report a scam — Cyber Shield</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <a class="brand" href="board.html">Cyber<span>Shield</span></a>
+  <nav>
+    <a href="board.html">Community board</a>
+    <a href="quiz.html">Scam or fake?</a>
+  </nav>
+</div>
+
+<div class="page">
+  <div class="notice wide">
+    <div class="eyebrow">File a report</div>
+    <h1>What happened to you?</h1>
+    <p>Your report goes straight to the community board — no approval needed. A photo of the message, screen, or payment helps others recognize it faster.</p>
+
+    <form id="reportForm">
+      <label for="category">Type of scam</label>
+      <select id="category" required>
+        <option value="">Select one</option>
+        <option value="phishing">Phishing (fake email/link)</option>
+        <option value="fake_call">Fake call</option>
+        <option value="upi_fraud">UPI / payment fraud</option>
+        <option value="fake_job">Fake job offer</option>
+        <option value="otp_scam">OTP scam</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label for="description">Describe what happened</label>
+      <textarea id="description" required placeholder="What did they say, ask for, or send you?"></textarea>
+
+      <label for="state">State this happened in</label>
+      <input type="text" id="state" placeholder="e.g. Tamil Nadu" required>
+
+      <label for="occupationTargeted">Who does this scam usually target?</label>
+      <select id="occupationTargeted" required>
+        <option value="">Select one</option>
+        <option>student</option>
+        <option>employee</option>
+        <option>business owner</option>
+        <option>retired</option>
+        <option>homemaker</option>
+        <option>freelancer</option>
+        <option>government employee</option>
+        <option>daily wage worker</option>
+        <option>farmer</option>
+        <option>healthcare worker</option>
+        <option>teacher</option>
+        <option>delivery agent</option>
+        <option>shop owner</option>
+        <option>unemployed</option>
+        <option>self-employed professional</option>
+      </select>
+
+      <label for="evidenceImage">Evidence photo (optional, 1 image)</label>
+      <input type="file" id="evidenceImage" accept="image/*">
+
+      <button type="submit" class="alert-btn">Post to community board</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+const userId = localStorage.getItem('cs_userId');
+if (!localStorage.getItem('cs_user')) window.location.href = 'login.html';
+
+const form = document.getElementById('reportForm');
+const statusMsg = document.getElementById('statusMsg');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  statusMsg.className = 'status-msg';
+
+  const formData = new FormData();
+  formData.append('reportedBy', userId || '');
+  formData.append('category', document.getElementById('category').value);
+  formData.append('description', document.getElementById('description').value);
+  formData.append('state', document.getElementById('state').value);
+  formData.append('occupationTargeted', document.getElementById('occupationTargeted').value);
+
+  const fileInput = document.getElementById('evidenceImage');
+  if (fileInput.files[0]) {
+    formData.append('evidenceImage', fileInput.files[0]);
+  }
+
+  try {
+    const res = await fetch('/complaints', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not submit report');
+
+    statusMsg.textContent = 'Posted. Taking you to the community board...';
+    statusMsg.className = 'status-msg show ok';
+    setTimeout(() => { window.location.href = 'board.html'; }, 1000);
+  } catch (err) {
+    statusMsg.textContent = err.message;
+    statusMsg.className = 'status-msg show err';
+  }
+});
+</script>
+
+</body>
+</html>

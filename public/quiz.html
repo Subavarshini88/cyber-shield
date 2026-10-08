@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scam or fake? — Cyber Shield</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <a class="brand" href="board.html">Cyber<span>Shield</span></a>
+  <nav>
+    <a href="board.html">Community board</a>
+    <a href="report.html">Report a scam</a>
+  </nav>
+</div>
+
+<div class="page">
+  <h1>Scam or fake?</h1>
+  <p>Read the scenario below. Some really happened. Some are made up. Guess, then see the real story either way.</p>
+
+  <div class="quiz-card">
+    <span class="score-pill">Score: <span id="scoreDisplay">0 / 0</span></span>
+    <div class="quiz-source" id="quizSource">Loading...</div>
+    <div class="quiz-story" id="quizStory">Fetching a scenario...</div>
+
+    <div class="quiz-choices" id="quizChoices">
+      <button id="guessReal">This really happened</button>
+      <button id="guessFake">This is made up</button>
+    </div>
+
+    <div class="reveal" id="reveal">
+      <div class="verdict" id="verdict"></div>
+      <div class="facts" id="facts"></div>
+      <button id="nextBtn" style="margin-top:16px">Next scenario</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentScenario = null;
+let score = { correct: 0, attempted: 0 };
+
+async function loadScenario() {
+  document.getElementById('reveal').className = 'reveal';
+  document.getElementById('quizChoices').style.display = 'grid';
+  document.getElementById('quizStory').textContent = 'Fetching a scenario...';
+  document.getElementById('quizSource').textContent = '';
+
+  try {
+    const res = await fetch('/quiz/random');
+    const scenario = await res.json();
+    currentScenario = scenario;
+    document.getElementById('quizStory').textContent = scenario.storyText;
+    document.getElementById('quizSource').textContent =
+      scenario.source === 'external_news' ? 'Not from this app\'s reports' : 'From the community board';
+  } catch (err) {
+    document.getElementById('quizStory').textContent = 'Could not load a scenario right now.';
+  }
+}
+
+async function submitGuess(guess) {
+  if (!currentScenario) return;
+  try {
+    const res = await fetch('/quiz/answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenarioId: currentScenario._id, userGuess: guess })
+    });
+    const data = await res.json();
+
+    score.attempted++;
+    if (data.isCorrect) score.correct++;
+    document.getElementById('scoreDisplay').textContent = `${score.correct} / ${score.attempted}`;
+
+    const verdict = document.getElementById('verdict');
+    verdict.textContent = data.isCorrect
+      ? 'Correct — this really happened.'
+      : `Not quite — this was actually ${data.actualAnswer ? 'real' : 'made up'}.`;
+    verdict.className = 'verdict ' + (data.isCorrect ? 'correct' : 'wrong');
+
+    const facts = document.getElementById('facts');
+    const d = data.details || {};
+    facts.innerHTML = `
+      ${d.location ? `<div><strong>Where:</strong> ${d.location}</div>` : ''}
+      ${d.date ? `<div><strong>When:</strong> ${d.date}</div>` : ''}
+      ${d.fullExplanation ? `<div style="margin-top:6px">${d.fullExplanation}</div>` : ''}
+    `;
+
+    document.getElementById('quizChoices').style.display = 'none';
+    document.getElementById('reveal').className = 'reveal show';
+  } catch (err) {
+    alert('Could not check your guess right now.');
+  }
+}
+
+document.getElementById('guessReal').addEventListener('click', () => submitGuess(true));
+document.getElementById('guessFake').addEventListener('click', () => submitGuess(false));
+document.getElementById('nextBtn').addEventListener('click', loadScenario);
+
+loadScenario();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community board — Cyber Shield</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <a class="brand" href="board.html">Cyber<span>Shield</span></a>
+  <nav>
+    <a href="report.html">Report a scam</a>
+    <a href="quiz.html">Scam or fake?</a>
+    <a href="#" id="logoutLink">Log out</a>
+  </nav>
+</div>
+
+<div class="page">
+  <h1>What people are reporting</h1>
+  <p id="welcomeLine" style="color:var(--ink-soft)"></p>
+
+  <div class="risk-board" id="riskBoard">
+    <div class="eyebrow">Personal risk warning</div>
+    <h2>You may be at risk of...</h2>
+    <ul class="risk-list" id="riskList">
+      <li class="risk-empty">Loading your risk profile...</li>
+    </ul>
+  </div>
+
+  <div class="feed-head">
+    <h2 style="margin-bottom:0">Recent complaints</h2>
+  </div>
+  <div id="feed">
+    <p style="color:var(--ink-soft)">Loading complaints...</p>
+  </div>
+</div>
+
+<script>
+const user = JSON.parse(localStorage.getItem('cs_user') || 'null');
+const userId = localStorage.getItem('cs_userId');
+
+if (!user) {
+  window.location.href = 'login.html';
+}
+
+document.getElementById('welcomeLine').textContent =
+  `Logged in as ${user.name} · ${user.occupation}, ${user.state}`;
+
+document.getElementById('logoutLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  localStorage.removeItem('cs_token');
+  localStorage.removeItem('cs_user');
+  localStorage.removeItem('cs_userId');
+  window.location.href = 'login.html';
+});
+
+// ---------- Personalized risk warning ----------
+async function loadRisk() {
+  const riskList = document.getElementById('riskList');
+  if (!userId) {
+    riskList.innerHTML = '<li class="risk-empty">Log in again to see your personal risk warning.</li>';
+    return;
+  }
+  try {
+    const res = await fetch(`/complaints/risk-warning/${userId}`);
+    const data = await res.json();
+    if (!data.topRisks || data.topRisks.length === 0) {
+      riskList.innerHTML = '<li class="risk-empty">Not enough reports yet to warn you about a specific scam type.</li>';
+      return;
+    }
+    riskList.innerHTML = data.topRisks.map(r =>
+      `<li><span>${formatCategory(r._id)}</span><span class="risk-count">${r.count} reports</span></li>`
+    ).join('');
+  } catch (err) {
+    riskList.innerHTML = '<li class="risk-empty">Could not load your risk warning right now.</li>';
+  }
+}
+
+function formatCategory(cat) {
+  return (cat || 'other').replace(/_/g, ' ');
+}
+
+// ---------- Community feed ----------
+async function loadFeed() {
+  const feed = document.getElementById('feed');
+  try {
+    const res = await fetch('/complaints');
+    const complaints = await res.json();
+    if (complaints.length === 0) {
+      feed.innerHTML = '<div class="empty-state">No complaints reported yet. Be the first.</div>';
+      return;
+    }
+    feed.innerHTML = complaints.map(c => `
+      <div class="pin-card">
+        <div class="meta">
+          <span class="tag">${formatCategory(c.category)}</span>
+          <span>${new Date(c.createdAt).toLocaleDateString()}</span>
+        </div>
+        <p class="desc">${escapeHtml(c.description)}</p>
+        <div class="where">${c.state || 'Unknown state'} · affects ${formatCategory(c.occupationTargeted)}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    feed.innerHTML = '<div class="empty-state">Could not load the community feed right now.</div>';
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+loadRisk();
+loadFeed();
+</script>
+
+</body>
+</html>
